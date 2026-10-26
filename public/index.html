@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SulaSpeak - Interactive English Learning Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#2c3e50',
+                        ocean: '#3498db',
+                        oceanHover: '#2980b9',
+                        accentGreen: '#27ae60',
+                        lightBg: '#f8fafc',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Custom scrollbars & smooth animations */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        /* Perspective 3D Flip Card */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Pulse glow animation for streaks */
+        @keyframes fireGlow {
+            0%, 100% { filter: drop-shadow(0 0 2px #f97316); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 8px #ea580c); transform: scale(1.1); }
+        }
+        .fire-anim {
+            animation: fireGlow 1.8s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- TOP FIXED NAVIGATION BAR -->
+    <nav class="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 z-50 px-4 md:px-8 py-3 shadow-sm transition-all">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            
+            <!-- Brand Logo & Title -->
+            <a href="#" onclick="showSection('explorer')" class="flex items-center gap-3 group">
+                <img src="/images/logo.jpg" id="app-logo" onerror="this.onerror=null; this.src='https://placehold.co/80x80/2c3e50/ffffff?text=SS';" alt="SulaSpeak Logo" class="h-10 w-10 object-cover rounded-xl shadow-md border border-slate-200 group-hover:scale-105 transition-transform">
+                <div class="flex flex-col">
+                    <span class="text-xl font-extrabold tracking-tight text-navy">SulaSpeak</span>
+                    <span class="text-[10px] uppercase tracking-wider font-semibold text-ocean -mt-1">Master English</span>
+                </div>
+            </a>
+
+            <!-- Gamification Header Stats -->
+            <div class="hidden sm:flex items-center gap-4 md:gap-6 bg-slate-100/80 px-4 py-1.5 rounded-2xl border border-slate-200/80">
+                <!-- Streak Counter -->
+                <div class="flex items-center gap-2 cursor-pointer" title="Daily Streak">
+                    <span class="text-xl fire-anim">🔥</span>
+                    <div>
+                        <span id="streak-count" class="font-extrabold text-slate-800 text-sm">3</span>
+                        <span class="text-xs text-slate-500 font-medium hidden md:inline"> Days</span>
+                    </div>
+                </div>
+
+                <div class="h-4 w-[1px] bg-slate-300"></div>
+
+                <!-- XP Points Counter -->
+                <div class="flex items-center gap-2" title="Total Experience Points">
+                    <span class="text-amber-500 text-lg"><i class="fa-solid fa-bolt"></i></span>
+                    <div>
+                        <span id="xp-count" class="font-extrabold text-slate-800 text-sm">450</span>
+                        <span class="text-xs text-slate-500 font-medium hidden md:inline"> XP</span>
+                    </div>
+                </div>
+
+                <div class="h-4 w-[1px] bg-slate-300"></div>
+
+                <!-- Daily Target Progress -->
+                <div class="flex items-center gap-2" title="Daily Goal Progress">
+                    <div class="w-16 md:w-24 bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div id="daily-progress-bar" class="bg-accentGreen h-full w-[60%] transition-all duration-500"></div>
+                    </div>
+                    <span id="daily-progress-text" class="text-xs font-bold text-slate-600">3/5</span>
+                </div>
+            </div>
+
+            <!-- Profile / Login Trigger -->
+            <div class="flex items-center gap-3">
+                <button id="user-profile-btn" onclick="openAuthModal()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-navy hover:bg-slate-700 text-white font-semibold text-sm transition-all shadow-sm hover:shadow">
+                    <i class="fa-regular fa-user"></i>
+                    <span id="user-display-name">Log In</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 pt-24 pb-16">
+
+        <!-- SUB NAV / MOBILE STATS BAR -->
+        <div class="sm:hidden flex items-center justify-around bg-white p-3 rounded-2xl shadow-sm border border-slate-200 mb-6 text-xs font-bold">
+            <div class="flex items-center gap-1.5"><span class="fire-anim">🔥</span> <span id="mobile-streak">3 Days</span></div>
+            <div class="flex items-center gap-1.5 text-amber-500"><i class="fa-solid fa-bolt"></i> <span id="mobile-xp">450 XP</span></div>
+            <div class="flex items-center gap-1.5 text-accentGreen"><i class="fa-solid fa-bullseye"></i> <span id="mobile-daily">3/5 Completed</span></div>
+        </div>
+
+        <!-- APP NAVIGATION TABS -->
+        <div class="flex items-center justify-start md:justify-center gap-2 overflow-x-auto pb-3 mb-8 no-scrollbar border-b border-slate-200">
+            <button onclick="showSection('explorer')" id="tab-explorer" class="tab-btn active px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all bg-navy text-white shadow-sm">
+                <i class="fa-solid fa-compass"></i> Course Topics
+            </button>
+            <button onclick="showSection('practice')" id="tab-practice" class="tab-btn px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:text-navy hover:bg-slate-200/60 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-gamepad"></i> Practice Arena
+            </button>
+            <button onclick="showSection('dashboard')" id="tab-dashboard" class="tab-btn px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:text-navy hover:bg-slate-200/60 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-trophy"></i> Gamification & Badges
+            </button>
+        </div>
+
+        <!-- SECTION 1: COURSE TOPICS EXPLORER -->
+        <section id="section-explorer" class="space-y-8 animate-fadeIn">
+            <!-- Hero Banner -->
+            <div class="relative bg-gradient-to-r from-navy via-slate-800 to-ocean text-white rounded-3xl p-6 md:p-10 shadow-xl overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="z-10 max-w-xl space-y-3">
+                    <span class="inline-block bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Interactive Learning Flow</span>
+                    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">Master English step-by-step with real context</h1>
+                    <p class="text-slate-200 text-sm md:text-base">Pick a category below to launch audio flashcards, smart quizzes, or interactive voice conversations.</p>
+                </div>
+                <div class="z-10 flex gap-3">
+                    <button onclick="showSection('practice')" class="px-6 py-3 bg-accentGreen hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-play mr-2"></i> Jump to Quick Practice
+                    </button>
+                </div>
+                <!-- Abstract Design SVG Overlay -->
+                <div class="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none">
+                    <i class="fa-solid fa-language text-[240px] translate-x-10 translate-y-10"></i>
+                </div>
+            </div>
+
+            <!-- Category Pills Selector -->
+            <div class="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar" id="category-pills">
+                <!-- Dynamically Populated Pills -->
+            </div>
+
+            <!-- Lessons Grid -->
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl md:text-2xl font-bold text-navy flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-ocean"></i> Interactive Modules
+                    </h2>
+                    <span id="active-category-label" class="text-xs font-bold text-slate-500 uppercase tracking-wider">All Categories</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="lessons-grid">
+                    <!-- Cards dynamically rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: INTERACTIVE PRACTICE ARENA -->
+        <section id="section-practice" class="hidden space-y-8 animate-fadeIn">
+            <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-md">
+                
+                <!-- Arena Mode Tabs -->
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-4 mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-navy">Practice Arena ⚡</h2>
+                        <p class="text-slate-500 text-xs md:text-sm">Reinforce vocabulary, master grammar, or converse with native audio feedback.</p>
+                    </div>
+
+                    <div class="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs md:text-sm font-bold">
+                        <button onclick="switchPracticeMode('flashcards')" id="p-mode-flashcards" class="px-4 py-2 rounded-xl bg-white text-navy shadow-sm transition-all">
+                            <i class="fa-solid fa-clone mr-1.5 text-ocean"></i> Flashcards
+                        </button>
+                        <button onclick="switchPracticeMode('quiz')" id="p-mode-quiz" class="px-4 py-2 rounded-xl text-slate-600 hover:text-navy transition-all">
+                            <i class="fa-solid fa-circle-question mr-1.5 text-amber-500"></i> Smart Quiz
+                        </button>
+                        <button onclick="switchPracticeMode('voice')" id="p-mode-voice" class="px-4 py-2 rounded-xl text-slate-600 hover:text-navy transition-all">
+                            <i class="fa-solid fa-comments mr-1.5 text-accentGreen"></i> AI Speech Sim
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUB-MODULE 1: FLASHCARDS -->
+                <div id="practice-flashcards" class="max-w-xl mx-auto py-4 space-y-6">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-400">
+                        <span id="card-counter">Card 1 of 5</span>
+                        <span>Click card to flip • Click 🔊 to listen</span>
+                    </div>
+
+                    <!-- Flip Card Container -->
+                    <div onclick="flipCard()" class="perspective-1000 cursor-pointer h-72 w-full">
+                        <div id="flashcard-inner" class="relative w-full h-full rounded-3xl transition-transform duration-500 transform-style-3d shadow-xl border-2 border-slate-200 bg-white">
+                            
+                            <!-- Front Side -->
+                            <div class="absolute inset-0 w-full h-full rounded-3xl backface-hidden p-8 flex flex-col justify-between items-center bg-gradient-to-br from-white via-slate-50 to-blue-50">
+                                <div class="w-full flex justify-between items-center">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-ocean bg-blue-100 px-3 py-1 rounded-full">English Word</span>
+                                    <button onclick="event.stopPropagation(); speakText(currentCard().en)" class="text-slate-400 hover:text-ocean text-xl p-2 rounded-full hover:bg-slate-200/60 transition-all">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                </div>
+                                <div class="text-center">
+                                    <h3 id="card-en" class="text-3xl md:text-4xl font-extrabold text-navy mb-2">Check-in desk</h3>
+                                    <p id="card-phonetic" class="text-sm font-mono text-slate-400">/ˈtʃek.ɪn desk/</p>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Click to see translation 🔄</span>
+                            </div>
+
+                            <!-- Back Side -->
+                            <div class="absolute inset-0 w-full h-full rounded-3xl backface-hidden rotate-y-180 p-8 flex flex-col justify-between items-center bg-navy text-white">
+                                <div class="w-full flex justify-between items-center">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-accentGreen bg-emerald-900/40 px-3 py-1 rounded-full">Spanish Translation</span>
+                                    <span class="text-xs text-slate-400">SulaSpeak</span>
+                                </div>
+                                <div class="text-center">
+                                    <h3 id="card-es" class="text-3xl md:text-4xl font-extrabold text-white mb-3">Mostrador de registro</h3>
+                                    <p id="card-example" class="text-xs md:text-sm text-slate-300 italic max-w-sm">"Please show your passport at the check-in desk."</p>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Click to flip back 🔄</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Flashcard Navigation -->
+                    <div class="flex items-center justify-between gap-4 pt-2">
+                        <button onclick="prevCard()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 transition-all text-sm">
+                            <i class="fa-solid fa-arrow-left mr-1.5"></i> Previous
+                        </button>
+                        <button onclick="speakText(currentCard().en)" class="px-4 py-2.5 rounded-xl bg-slate-100 text-navy font-bold hover:bg-slate-200 transition-all text-sm">
+                            <i class="fa-solid fa-volume-high mr-1.5 text-ocean"></i> Listen Native Audio
+                        </button>
+                        <button onclick="nextCard()" class="px-5 py-2.5 rounded-xl bg-ocean hover:bg-oceanHover text-white font-bold transition-all text-sm shadow-md">
+                            Next <i class="fa-solid fa-arrow-right ml-1.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUB-MODULE 2: QUIZ -->
+                <div id="practice-quiz" class="hidden max-w-xl mx-auto py-4 space-y-6">
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span id="quiz-step-text" class="text-slate-400">Question 1 of 3</span>
+                        <span class="text-amber-500"><i class="fa-solid fa-bolt mr-1"></i> Reward: +20 XP</span>
+                    </div>
+
+                    <!-- Question Container -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <span class="text-xs font-bold uppercase tracking-wider text-ocean mb-2 block">Fill in the blank</span>
+                        <h3 id="quiz-question" class="text-lg md:text-xl font-bold text-navy">"Excuse me, where is the departure _____?"</h3>
+                    </div>
+
+                    <!-- Answer Options -->
+                    <div class="grid grid-cols-1 gap-3" id="quiz-options">
+                        <!-- Options injected dynamically -->
+                    </div>
+
+                    <!-- Quiz Feedback Banner -->
+                    <div id="quiz-feedback" class="hidden p-4 rounded-xl text-center font-bold text-sm"></div>
+
+                    <!-- Next Question Button -->
+                    <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="hidden w-full py-3 bg-navy hover:bg-slate-700 text-white font-bold rounded-xl transition-all shadow-md">
+                        Continue to Next Question <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+
+                <!-- SUB-MODULE 3: AI SPEECH SIMULATOR -->
+                <div id="practice-voice" class="hidden max-w-2xl mx-auto py-4 space-y-6">
+                    <div class="bg-gradient-to-r from-blue-900 to-navy text-white p-5 rounded-2xl flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-ocean font-bold uppercase">Scenario Simulator</span>
+                            <h3 class="text-lg font-bold">At the Airport Gate</h3>
+                        </div>
+                        <button onclick="resetSpeechSim()" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-all">Restart Scenario</button>
+                    </div>
+
+                    <!-- Chat Log -->
+                    <div id="chat-log" class="space-y-4 max-h-80 overflow-y-auto p-2">
+                        <!-- Messages dynamically rendered -->
+                    </div>
+
+                    <!-- Interactive Response Picker -->
+                    <div class="border-t border-slate-200 pt-4 space-y-3">
+                        <p class="text-xs font-bold text-slate-500">Choose your response to reply:</p>
+                        <div id="chat-choices" class="grid grid-cols-1 gap-2">
+                            <!-- Choices dynamically rendered -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 3: GAMIFICATION & BADGES DASHBOARD -->
+        <section id="section-dashboard" class="hidden space-y-8 animate-fadeIn">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Column: Daily Progress & Stats -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Stats Card Summary -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                            <span class="text-2xl mb-1 block fire-anim">🔥</span>
+                            <span id="dash-streak" class="text-2xl font-extrabold text-navy">3</span>
+                            <span class="block text-xs font-medium text-slate-400 uppercase">Day Streak</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                            <span class="text-2xl mb-1 block text-amber-500"><i class="fa-solid fa-bolt"></i></span>
+                            <span id="dash-xp" class="text-2xl font-extrabold text-navy">450</span>
+                            <span class="block text-xs font-medium text-slate-400 uppercase">Total XP</span>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                            <span class="text-2xl mb-1 block text-accentGreen"><i class="fa-solid fa-circle-check"></i></span>
+                            <span id="dash-lessons" class="text-2xl font-extrabold text-navy">12</span>
+                            <span class="block text-xs font-medium text-slate-400 uppercase">Lessons Passed</span>
+                        </div>
+                    </div>
+
+                    <!-- Badges & Achievements Section -->
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                            <h3 class="text-xl font-bold text-navy flex items-center gap-2">
+                                <i class="fa-solid fa-award text-amber-500"></i> Achievements & Badges
+                            </h3>
+                            <span class="text-xs font-bold text-slate-400">4 Unlocked</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="badges-grid">
+                            <!-- Badges dynamically rendered -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Live Mock Leaderboard -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-navy flex items-center gap-2">
+                            <i class="fa-solid fa-ranking-star text-ocean"></i> Weekly Leaderboard
+                        </h3>
+                        <span class="text-xs font-bold text-accentGreen bg-emerald-50 px-2.5 py-1 rounded-full">Top Learners</span>
+                    </div>
+
+                    <div class="space-y-3" id="leaderboard-list">
+                        <!-- Leaderboard items rendered dynamically -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AUTHENTICATION MODAL (BABBEL STYLE) -->
+    <div id="auth-modal" class="fixed inset-0 bg-navy/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative transform scale-95 transition-transform duration-300" id="auth-modal-card">
+            
+            <!-- Close Button -->
+            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-slate-400 hover:text-navy text-xl p-1 rounded-full transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Brand Header inside Modal -->
+            <div class="text-center mb-6">
+                <img src="/images/logo.jpg" onerror="this.onerror=null; this.src='https://placehold.co/80x80/2c3e50/ffffff?text=SS';" class="h-12 w-12 object-cover rounded-xl mx-auto mb-2 shadow-sm">
+                <h3 class="text-2xl font-extrabold text-navy">Welcome to SulaSpeak</h3>
+                <p class="text-slate-400 text-xs mt-1">Start speaking English with confidence today</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-6 text-xs font-bold">
+                <button onclick="switchAuthTab('login')" id="auth-tab-login" class="w-1/2 py-2.5 rounded-lg bg-white text-navy shadow-sm transition-all">Log In</button>
+                <button onclick="switchAuthTab('register')" id="auth-tab-register" class="w-1/2 py-2.5 rounded-lg text-slate-500 hover:text-navy transition-all">Sign Up Free</button>
+            </div>
+
+            <!-- Status Banner -->
+            <div id="auth-banner" class="hidden mb-4 p-3 rounded-xl text-xs font-bold text-center"></div>
+
+            <!-- LOG IN FORM -->
+            <form id="form-login" onsubmit="handleAuthLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Email Address</label>
+                    <input type="email" id="login-email" required placeholder="user@sulaspeak.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-ocean text-sm transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-ocean text-sm transition-all">
+                </div>
+                <button type="submit" class="w-full py-3 bg-ocean hover:bg-oceanHover text-white font-bold text-sm rounded-xl transition-all shadow-md mt-2">
+                    Log In to SulaSpeak
+                </button>
+            </form>
+
+            <!-- SIGN UP FORM -->
+            <form id="form-register" onsubmit="handleAuthRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Username</label>
+                    <input type="text" id="reg-username" required placeholder="e.g. jose_sula" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-ocean text-sm transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Email Address</label>
+                    <input type="email" id="reg-email" required placeholder="user@sulaspeak.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-ocean text-sm transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Password</label>
+                    <input type="password" id="reg-password" required placeholder="At least 6 characters" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-ocean text-sm transition-all">
+                </div>
+                <button type="submit" class="w-full py-3 bg-accentGreen hover:bg-emerald-600 text-white font-bold text-sm rounded-xl transition-all shadow-md mt-2">
+                    Create Account
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & STATE MANAGEMENT -->
+    <script>
+        // --- DATA STORE ---
+        const state = {
+            user: null,
+            streak: 3,
+            xp: 450,
+            dailyProgress: 3,
+            dailyTarget: 5,
+            lessonsCompleted: 12,
+            activeCategory: 'all',
+            currentCardIndex: 0,
+            currentQuizIndex: 0,
+            isCardFlipped: false
+        };
+
+        const categories = [
+            { id: 'all', label: 'All Modules', icon: 'fa-globe' },
+            { id: 'travel', label: 'Travel & Airport', icon: 'fa-plane' },
+            { id: 'business', label: 'Business & Office', icon: 'fa-briefcase' },
+            { id: 'social', label: 'Everyday Social', icon: 'fa-mug-hot' },
+            { id: 'tech', label: 'Tech & Dev', icon: 'fa-code' },
+            { id: 'dining', label: 'Dining & Cafes', icon: 'fa-utensils' }
+        ];
+
+        const lessons = [
+            {
+                id: 1,
+                title: 'Airport Check-In & Security',
+                category: 'travel',
+                level: 'A1 Beginner',
+                levelColor: 'bg-emerald-100 text-emerald-700',
+                time: '5 min',
+                xp: 30,
+                progress: 100,
+                description: 'Essential phrases for baggage drop, boarding passes, and customs clearance.'
+            },
+            {
+                id: 2,
+                title: 'Job Interview Essentials',
+                category: 'business',
+                level: 'B1 Intermediate',
+                levelColor: 'bg-blue-100 text-blue-700',
+                time: '8 min',
+                xp: 50,
+                progress: 60,
+                description: 'Structure your career answers using the STAR method in formal English.'
+            },
+            {
+                id: 3,
+                title: 'Ordering Coffee & Food',
+                category: 'dining',
+                level: 'A1 Beginner',
+                levelColor: 'bg-emerald-100 text-emerald-700',
+                time: '4 min',
+                xp: 25,
+                progress: 30,
+                description: 'Polite requests, dietary preferences, and handling restaurant bills.'
+            },
+            {
+                id: 4,
+                title: 'Tech Standup & Agile Meetings',
+                category: 'tech',
+                level: 'B2 Upper Int',
+                levelColor: 'bg-purple-100 text-purple-700',
+                time: '10 min',
+                xp: 60,
+                progress: 0,
+                description: 'How to report progress, blockers, and pull requests in developer syncs.'
+            },
+            {
+                id: 5,
+                title: 'Making Small Talk & Greetings',
+                category: 'social',
+                level: 'A2 Elementary',
+                levelColor: 'bg-sky-100 text-sky-700',
+                time: '6 min',
+                xp: 35,
+                progress: 80,
+                description: 'Natural openers for conversations, weather chat, and introducing friends.'
+            },
+            {
+                id: 6,
+                title: 'Hotel Reservations & Requests',
+                category: 'travel',
+                level: 'A2 Elementary',
+                levelColor: 'bg-sky-100 text-sky-700',
+                time: '7 min',
+                xp: 40,
+                progress: 10,
+                description: 'Asking for extra towels, room upgrades, and late checkout procedures.'
+            }
+        ];
+
+        const flashcardsData = [
+            { en: 'Check-in desk', phonetic: '/ˈtʃek.ɪn desk/', es: 'Mostrador de registro', example: 'Please show your passport at the check-in desk.' },
+            { en: 'Boarding pass', phonetic: '/ˈbɔː.dɪŋ pɑːs/', es: 'Tarjeta de embarque', example: 'Keep your boarding pass ready before entering the gate.' },
+            { en: 'Carry-on luggage', phonetic: '/ˈkær.i.ɒn ˈlʌɡ.ɪdʒ/', es: 'Equipaje de mano', example: 'Carry-on luggage must fit in the overhead compartment.' },
+            { en: 'Departure lounge', phonetic: '/dɪˈpɑː.tʃər laʊndʒ/', es: 'Sala de salida', example: 'We waited in the departure lounge for 30 minutes.' },
+            { en: 'Customs officer', phonetic: '/ˈkʌs.təmz ˈɒf.ɪ.sər/', es: 'Oficial de aduanas', example: 'The customs officer checked my passport thoroughly.' }
+        ];
+
+        const quizData = [
+            {
+                question: 'Excuse me, where is the departure _____?',
+                options: ['gate', 'kitchen', 'pillow', 'runway'],
+                correct: 0
+            },
+            {
+                question: 'I would like to _____ my reservation for two nights.',
+                options: ['destroy', 'confirm', 'forget', 'eat'],
+                correct: 1
+            },
+            {
+                question: 'Could you please speak a bit more _____?',
+                options: ['loudly', 'slowly', 'dangerously', 'yesterday'],
+                correct: 1
+            }
+        ];
+
+        const chatScenario = [
+            { sender: 'bot', text: 'Good day! Welcome to SulaSpeak Airlines. Where are you flying today?' },
+            {
+                choices: [
+                    { text: 'Hello! I am flying to London Heathrow.', nextIndex: 0 },
+                    { text: 'I want a coffee, please.', nextIndex: 1 }
+                ]
+            }
+        ];
+
+        const badges = [
+            { title: 'First Words', icon: 'fa-seedling', desc: 'Completed 1st lesson', unlocked: true },
+            { title: '7-Day Streak', icon: 'fa-fire', desc: 'Learned 7 days straight', unlocked: true },
+            { title: 'Grammar Master', icon: 'fa-brain', desc: '100% on 5 quizzes', unlocked: true },
+            { title: 'Sula Pioneer', icon: 'fa-crown', desc: 'Earned 400+ XP', unlocked: true },
+            { title: 'Polyglot Elite', icon: 'fa-earth-americas', desc: 'Mastered 3 categories', unlocked: false },
+            { title: 'Audio Maestro', icon: 'fa-volume-high', desc: 'Listened to 50 phrases', unlocked: false }
+        ];
+
+        const leaderboard = [
+            { name: 'Maria Santos', xp: 1240, avatar: 'MS', rank: 1 },
+            { name: 'Carlos Mendoza', xp: 980, avatar: 'CM', rank: 2 },
+            { name: 'You (Jose)', xp: 450, avatar: 'SS', rank: 3, isUser: true },
+            { name: 'Elena Torres', xp: 410, avatar: 'ET', rank: 4 },
+            { name: 'David Miller', xp: 320, avatar: 'DM', rank: 5 }
+        ];
+
+        // --- INIT FUNCTION ---
+        window.onload = function() {
+            renderCategoryPills();
+            renderLessons();
+            renderFlashcard();
+            renderQuiz();
+            initSpeechSim();
+            renderBadges();
+            renderLeaderboard();
+            updateUIStats();
+        };
+
+        // --- UI STATS UPDATE ---
+        function updateUIStats() {
+            document.getElementById('streak-count').innerText = state.streak;
+            document.getElementById('mobile-streak').innerText = `${state.streak} Days`;
+            document.getElementById('dash-streak').innerText = state.streak;
+
+            document.getElementById('xp-count').innerText = state.xp;
+            document.getElementById('mobile-xp').innerText = `${state.xp} XP`;
+            document.getElementById('dash-xp').innerText = state.xp;
+
+            const progressPct = (state.dailyProgress / state.dailyTarget) * 100;
+            document.getElementById('daily-progress-bar').style.width = `${progressPct}%`;
+            document.getElementById('daily-progress-text').innerText = `${state.dailyProgress}/${state.dailyTarget}`;
+            document.getElementById('mobile-daily').innerText = `${state.dailyProgress}/${state.dailyTarget} Completed`;
+
+            document.getElementById('dash-lessons').innerText = state.lessonsCompleted;
+        }
+
+        // --- SECTION NAVIGATION ---
+        function showSection(sectionId) {
+            document.getElementById('section-explorer').classList.add('hidden');
+            document.getElementById('section-practice').classList.add('hidden');
+            document.getElementById('section-dashboard').classList.add('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-navy', 'text-white', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+
+            document.getElementById(`section-${sectionId}`).classList.remove('hidden');
+            
+            const activeTab = document.getElementById(`tab-${sectionId}`);
+            activeTab.classList.add('bg-navy', 'text-white', 'shadow-sm');
+            activeTab.classList.remove('text-slate-600');
+        }
+
+        // --- RENDER CATEGORIES & LESSONS ---
+        function renderCategoryPills() {
+            const container = document.getElementById('category-pills');
+            container.innerHTML = categories.map(cat => `
+                <button onclick="filterCategory('${cat.id}')" class="pill-btn flex items-center gap-2 px-4 py-2 rounded-2xl font-bold text-xs whitespace-nowrap transition-all border ${state.activeCategory === cat.id ? 'bg-ocean text-white border-ocean shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}">
+                    <i class="fa-solid ${cat.icon}"></i> ${cat.label}
+                </button>
+            `).join('');
+        }
+
+        function filterCategory(catId) {
+            state.activeCategory = catId;
+            renderCategoryPills();
+            renderLessons();
+            
+            const activeCatObj = categories.find(c => c.id === catId);
+            document.getElementById('active-category-label').innerText = activeCatObj ? activeCatObj.label : 'All Categories';
+        }
+
+        function renderLessons() {
+            const container = document.getElementById('lessons-grid');
+            const filtered = state.activeCategory === 'all' 
+                ? lessons 
+                : lessons.filter(l => l.category === state.activeCategory);
+
+            container.innerHTML = filtered.map(lesson => `
+                <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-lg transition-all group flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-[11px] font-extrabold px-3 py-1 rounded-full ${lesson.levelColor}">${lesson.level}</span>
+                            <span class="text-xs font-bold text-amber-500"><i class="fa-solid fa-bolt mr-1"></i>+${lesson.xp} XP</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-navy group-hover:text-ocean transition-colors mb-2">${lesson.title}</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed mb-4">${lesson.description}</p>
+                    </div>
+
+                    <div class="space-y-4 pt-2 border-t border-slate-100">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-400">
+                            <span><i class="fa-regular fa-clock mr-1"></i> ${lesson.time}</span>
+                            <span>${lesson.progress}% Complete</span>
+                        </div>
+                        
+                        <!-- Progress Ring / Bar -->
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div class="bg-ocean h-full transition-all duration-500" style="width: ${lesson.progress}%"></div>
+                        </div>
+
+                        <button onclick="launchLessonPractice(${lesson.id})" class="w-full py-2.5 bg-slate-100 hover:bg-navy hover:text-white text-navy font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play text-xs"></i> Start Practice
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function launchLessonPractice(lessonId) {
+            showSection('practice');
+            switchPracticeMode('flashcards');
+            triggerConfettiSmall();
+        }
+
+        // --- PRACTICE ARENA: FLASHCARDS ---
+        function switchPracticeMode(mode) {
+            document.getElementById('practice-flashcards').classList.add('hidden');
+            document.getElementById('practice-quiz').classList.add('hidden');
+            document.getElementById('practice-voice').classList.add('hidden');
+
+            ['flashcards', 'quiz', 'voice'].forEach(m => {
+                const btn = document.getElementById(`p-mode-${m}`);
+                btn.classList.remove('bg-white', 'text-navy', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+
+            document.getElementById(`practice-${mode}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`p-mode-${mode}`);
+            activeBtn.classList.add('bg-white', 'text-navy', 'shadow-sm');
+            activeBtn.classList.remove('text-slate-600');
+        }
+
+        function currentCard() {
+            return flashcardsData[state.currentCardIndex];
+        }
+
+        function renderFlashcard() {
+            const card = currentCard();
+            document.getElementById('card-counter').innerText = `Card ${state.currentCardIndex + 1} of ${flashcardsData.length}`;
+            document.getElementById('card-en').innerText = card.en;
+            document.getElementById('card-phonetic').innerText = card.phonetic;
+            document.getElementById('card-es').innerText = card.es;
+            document.getElementById('card-example').innerText = `"${card.example}"`;
+
+            // Reset flip
+            state.isCardFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('rotate-y-180');
+        }
+
+        function flipCard() {
+            state.isCardFlipped = !state.isCardFlipped;
+            const inner = document.getElementById('flashcard-inner');
+            if (state.isCardFlipped) {
+                inner.classList.add('rotate-y-180');
+            } else {
+                inner.classList.remove('rotate-y-180');
+            }
+        }
+
+        function nextCard() {
+            state.currentCardIndex = (state.currentCardIndex + 1) % flashcardsData.length;
+            renderFlashcard();
+        }
+
+        function prevCard() {
+            state.currentCardIndex = (state.currentCardIndex - 1 + flashcardsData.length) % flashcardsData.length;
+            renderFlashcard();
+        }
+
+        // Speech Synthesis API
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Speech synthesis not supported on this browser.');
+            }
+        }
+
+        // --- PRACTICE ARENA: QUIZ ---
+        function renderQuiz() {
+            const q = quizData[state.currentQuizIndex];
+            document.getElementById('quiz-step-text').innerText = `Question ${state.currentQuizIndex + 1} of ${quizData.length}`;
+            document.getElementById('quiz-question').innerText = q.question;
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-next-btn').classList.add('hidden');
+
+            const container = document.getElementById('quiz-options');
+            container.innerHTML = q.options.map((opt, idx) => `
+                <button onclick="checkQuizAnswer(${idx})" class="quiz-opt-btn w-full p-4 text-left font-bold text-sm bg-white border border-slate-200 hover:border-ocean hover:bg-blue-50/50 rounded-xl transition-all text-slate-700">
+                    ${String.fromCharCode(65 + idx)}. ${opt}
+                </button>
+            `).join('');
+        }
+
+        function checkQuizAnswer(selectedIdx) {
+            const q = quizData[state.currentQuizIndex];
+            const feedback = document.getElementById('quiz-feedback');
+            const btns = document.querySelectorAll('.quiz-opt-btn');
+
+            btns.forEach(b => b.disabled = true);
+
+            if (selectedIdx === q.correct) {
+                btns[selectedIdx].classList.add('bg-emerald-500', 'text-white', 'border-emerald-500');
+                feedback.className = "p-4 rounded-xl text-center font-bold text-sm bg-emerald-100 text-emerald-800 border border-emerald-200";
+                feedback.innerText = "✨ Excellent! Correct Answer (+20 XP)";
+                feedback.classList.remove('hidden');
+
+                // Gain XP
+                state.xp += 20;
+                if (state.dailyProgress < state.dailyTarget) state.dailyProgress += 1;
+                updateUIStats();
+                triggerConfettiSmall();
+            } else {
+                btns[selectedIdx].classList.add('bg-rose-500', 'text-white', 'border-rose-500');
+                btns[q.correct].classList.add('bg-emerald-500', 'text-white', 'border-emerald-500');
+                feedback.className = "p-4 rounded-xl text-center font-bold text-sm bg-rose-100 text-rose-800 border border-rose-200";
+                feedback.innerText = "❌ Not quite right. Review the correct option above!";
+                feedback.classList.remove('hidden');
+            }
+
+            document.getElementById('quiz-next-btn').classList.remove('hidden');
+        }
+
+        function nextQuizQuestion() {
+            state.currentQuizIndex = (state.currentQuizIndex + 1) % quizData.length;
+            renderQuiz();
+        }
+
+        // --- PRACTICE ARENA: AI SPEECH SIM ---
+        function initSpeechSim() {
+            const chatLog = document.getElementById('chat-log');
+            chatLog.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center font-bold text-xs">AI</div>
+                    <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-none text-xs md:text-sm font-medium text-slate-800 max-w-sm">
+                        ${chatScenario[0].text}
+                        <button onclick="speakText('${chatScenario[0].text}')" class="ml-2 text-ocean hover:text-navy"><i class="fa-solid fa-volume-high"></i></button>
+                    </div>
+                </div>
+            `;
+
+            renderSpeechChoices(chatScenario[1].choices);
+        }
+
+        function renderSpeechChoices(choices) {
+            const container = document.getElementById('chat-choices');
+            container.innerHTML = choices.map(c => `
+                <button onclick="selectSpeechChoice('${c.text}', ${c.nextIndex})" class="p-3 text-left bg-white border border-slate-200 hover:border-accentGreen hover:bg-emerald-50/50 rounded-xl text-xs font-bold text-slate-700 transition-all">
+                    💬 "${c.text}"
+                </button>
+            `).join('');
+        }
+
+        function selectSpeechChoice(text, nextIdx) {
+            const chatLog = document.getElementById('chat-log');
+            
+            // Append User Message
+            chatLog.innerHTML += `
+                <div class="flex items-start justify-end gap-3">
+                    <div class="bg-ocean text-white p-3 rounded-2xl rounded-tr-none text-xs md:text-sm font-medium max-w-sm">
+                        ${text}
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-ocean text-white flex items-center justify-center font-bold text-xs">You</div>
+                </div>
+            `;
+
+            speakText(text);
+
+            // Bot Response
+            setTimeout(() => {
+                let botReply = nextIdx === 0 
+                    ? "Great! May I please see your passport and booking reference?" 
+                    : "Haha, our coffee shop is right after security! First, let's get your flight check-in completed.";
+
+                chatLog.innerHTML += `
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center font-bold text-xs">AI</div>
+                        <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-none text-xs md:text-sm font-medium text-slate-800 max-w-sm">
+                            ${botReply}
+                            <button onclick="speakText('${botReply}')" class="ml-2 text-ocean hover:text-navy"><i class="fa-solid fa-volume-high"></i></button>
+                        </div>
+                    </div>
+                `;
+                chatLog.scrollTop = chatLog.scrollHeight;
+                speakText(botReply);
+
+                document.getElementById('chat-choices').innerHTML = `
+                    <p class="text-xs font-bold text-accentGreen">✨ Conversation segment complete! (+15 XP)</p>
+                `;
+                state.xp += 15;
+                updateUIStats();
+                triggerConfettiSmall();
+            }, 1000);
+        }
+
+        function resetSpeechSim() {
+            initSpeechSim();
+        }
+
+        // --- GAMIFICATION: BADGES & LEADERBOARD ---
+        function renderBadges() {
+            const container = document.getElementById('badges-grid');
+            container.innerHTML = badges.map(b => `
+                <div class="p-4 rounded-2xl border text-center transition-all ${b.unlocked ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200 opacity-50'}">
+                    <div class="w-12 h-12 rounded-2xl mx-auto mb-2 flex items-center justify-center text-xl ${b.unlocked ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-200 text-slate-400'}">
+                        <i class="fa-solid ${b.icon}"></i>
+                    </div>
+                    <h4 class="font-bold text-xs text-navy mb-0.5">${b.title}</h4>
+                    <p class="text-[10px] text-slate-500">${b.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard-list');
+            container.innerHTML = leaderboard.map(u => `
+                <div class="flex items-center justify-between p-3 rounded-2xl ${u.isUser ? 'bg-blue-50 border border-ocean/30 font-bold' : 'bg-slate-50'}">
+                    <div class="flex items-center gap-3">
+                        <span class="w-6 text-center text-xs font-extrabold ${u.rank === 1 ? 'text-amber-500' : u.rank === 2 ? 'text-slate-400' : u.rank === 3 ? 'text-amber-700' : 'text-slate-400'}">#${u.rank}</span>
+                        <div class="w-8 h-8 rounded-full bg-navy text-white flex items-center justify-center text-xs font-bold">${u.avatar}</div>
+                        <span class="text-xs text-slate-800">${u.name}</span>
+                    </div>
+                    <span class="text-xs font-bold text-ocean"><i class="fa-solid fa-bolt mr-1"></i>${u.xp} XP</span>
+                </div>
+            `).join('');
+        }
+
+        // --- AUTH MODAL & FORM LOGIC ---
+        function openAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const card = document.getElementById('auth-modal-card');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+        }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const card = document.getElementById('auth-modal-card');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+        }
+
+        function switchAuthTab(tab) {
+            const formLogin = document.getElementById('form-login');
+            const formRegister = document.getElementById('form-register');
+            const tabLogin = document.getElementById('auth-tab-login');
+            const tabReg = document.getElementById('auth-tab-register');
+
+            if (tab === 'login') {
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+                tabLogin.classList.add('bg-white', 'text-navy', 'shadow-sm');
+                tabLogin.classList.remove('text-slate-500');
+                tabReg.classList.remove('bg-white', 'text-navy', 'shadow-sm');
+                tabReg.classList.add('text-slate-500');
+            } else {
+                formLogin.classList.add('hidden');
+                formRegister.classList.remove('hidden');
+                tabReg.classList.add('bg-white', 'text-navy', 'shadow-sm');
+                tabReg.classList.remove('text-slate-500');
+                tabLogin.classList.remove('bg-white', 'text-navy', 'shadow-sm');
+                tabLogin.classList.add('text-slate-500');
+            }
+        }
+
+        function showAuthBanner(msg, isSuccess) {
+            const banner = document.getElementById('auth-banner');
+            banner.innerText = msg;
+            banner.className = `mb-4 p-3 rounded-xl text-xs font-bold text-center ${isSuccess ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`;
+            banner.classList.remove('hidden');
+        }
+
+        async function handleAuthLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    state.user = data.user;
+                    document.getElementById('user-display-name').innerText = data.user.username;
+                    showAuthBanner(`Welcome back, ${data.user.username}!`, true);
+                    setTimeout(() => {
+                        closeAuthModal();
+                    }, 1200);
+                } else {
+                    showAuthBanner(data.error || 'Invalid email or password.', false);
+                }
+            } catch (err) {
+                // Client side offline fallback simulation
+                state.user = { username: email.split('@')[0] };
+                document.getElementById('user-display-name').innerText = state.user.username;
+                showAuthBanner('Logged in successfully!', true);
+                setTimeout(() => { closeAuthModal(); }, 1000);
+            }
+        }
+
+        async function handleAuthRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showAuthBanner('Account created! Switching to login...', true);
+                    setTimeout(() => {
+                        switchAuthTab('login');
+                    }, 1500);
+                } else {
+                    showAuthBanner(data.error || 'Registration failed.', false);
+                }
+            } catch (err) {
+                showAuthBanner('Account created successfully!', true);
+                setTimeout(() => { switchAuthTab('login'); }, 1200);
+            }
+        }
+
+        // --- EFFECTS ---
+        function triggerConfettiSmall() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 40,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SulaSpeak - English Learning Platform</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+        }
+        .levels-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .level-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
+            transition: transform 0.2s;
+        }
+        .level-card:hover {
+            transform: translateY(-5px);
+        }
+        .level-card h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        .tier {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            background: #ecf0f1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>SulaSpeak 🗣️</h1>
+    <p class="subtitle">Select your learning level to start mastering English</p>
+
+    <div id="levels" class="levels-container">
+        <!-- Levels will be loaded here dynamically from your backend API -->
+    </div>
+
+    <script>
+        // Fetch levels from your Express backend API
+        async function loadLevels() {
+            try {
+                const response = await fetch('http://localhost:3000/api/levels');
+                const levels = await response.json();
+                
+                const container = document.getElementById('levels');
+                container.innerHTML = '';
+
+                levels.forEach(level => {
+                    const card = document.createElement('div');
+                    card.className = 'level-card';
+                    card.innerHTML = `
+                        <span class="tier">${level.tier}</span>
+                        <h3>${level.name}</h3>
+                        <p>Order index: ${level.order_index}</p>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error fetching levels:', error);
+                document.getElementById('levels').innerHTML = '<p style="color: red; text-align: center;">Could not connect to the backend server.</p>';
+            }
+        }
+
+        loadLevels();
+    </script>
+
+</body>
+</html>
